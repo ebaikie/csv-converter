@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Field Service Tasks → PDF</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Nunito:wght@300;400;600;700&family=Outfit:wght@300;400;600;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #3b1f5e; --ink-m: #7c5ab8;
+      --accent: #7c3aed; --accent-l: #f3eeff;
+      --surface: #fef7ff; --border: #ede9fe; --white: #ffffff;
+      --error: #c0392b; --success: #27ae60;
+      --header-bg: #7c3aed; --header-tx: #ffffff; --btn-tx: #ffffff;
+      --table-head-bg: #3b1f5e; --table-head-tx: #ffffff;
+      --status-err-bg: #fdeaea; --status-err-bd: #f5c0c0;
+      --status-ok-bg: #e8f7ee; --status-ok-bd: #aaddc4;
+      --status-info-bd: #c9aaff;
+      --fn: 'Nunito'; --r: 10px; color-scheme: light;
+    }
+    [data-theme="dark"] {
+      --ink: rgba(255,255,255,.8); --ink-m: rgba(255,255,255,.2);
+      --accent: #4dffa6; --accent-l: rgba(77,255,166,0.10);
+      --surface: #050a1c; --border: rgba(255,255,255,.07); --white: rgba(255,255,255,.04);
+      --error: #ff6b6b; --success: #4caf7d;
+      --header-bg: #050a1c; --header-tx: #4dffa6; --btn-tx: #050a1c;
+      --table-head-bg: #0d1329; --table-head-tx: #4dffa6;
+      --status-err-bg: rgba(255,107,107,0.12); --status-err-bd: rgba(255,107,107,0.30);
+      --status-ok-bg: rgba(76,175,124,0.12); --status-ok-bd: rgba(76,175,124,0.30);
+      --status-info-bd: rgba(77,255,166,0.30);
+      --fn: 'Outfit';
+      color-scheme: dark;
+    }
+
+    body { font-family:var(--fn),sans-serif; background:var(--surface); color:var(--ink); min-height:100vh; padding:20px; }
+
+    .container { max-width:800px; margin:0 auto; background:var(--white); border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,0.1); overflow:hidden; }
+
+    header {
+      background:var(--header-bg); color:var(--header-tx);
+      padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.08);
+    }
+    .header-bar { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+    .header-brand { display:flex; flex-direction:column; }
+    .header-brand h1 { font-size:1.05rem; font-weight:700; margin-bottom:2px; }
+    .header-sub { font-size:12px; opacity:0.7; margin:0; }
+    .ext-links { display:flex; justify-content:flex-start; gap:8px; margin-top:10px; flex-wrap:wrap; }
+    .ext-link {
+      display:inline-flex; align-items:center; gap:6px; padding:5px 12px;
+      border-radius:20px; font-size:12px; font-weight:500; text-decoration:none;
+      background:rgba(255,255,255,0.15); color:inherit; border:1px solid rgba(255,255,255,0.35);
+      transition:background 0.2s;
+    }
+    .ext-link:hover { background:rgba(255,255,255,0.28); }
+
+    main { padding:28px 28px 40px; display:flex; flex-direction:column; gap:20px; }
+
+    .card { background:var(--white); border:1px solid var(--border); border-radius:var(--r); padding:26px 30px; }
+    .card h2 { font-size:0.78rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-m); margin-bottom:16px; }
+
+    /* Upload section (no card border — TGA style) */
+    .upload-section { padding:12px 28px 28px; }
+
+    /* Drop zone */
+    .dropzone {
+      border:2px dashed var(--accent); border-radius:8px; padding:40px;
+      text-align:center; cursor:pointer; transition:all 0.3s; position:relative;
+      background:var(--white);
+    }
+    .dropzone:hover { background:var(--accent-l); }
+    .dropzone.dragover, .dropzone:focus-within { border-color:var(--accent); background:var(--accent-l); transform:scale(1.01); }
+    .dropzone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+    .dropzone-icon { font-size:3rem; display:block; margin-bottom:14px; }
+    .upload-text strong { display:block; font-size:1rem; font-weight:600; color:var(--accent); margin-bottom:4px; }
+    .upload-text small { color:var(--ink-m); font-size:0.8rem; }
+
+    .file-tag { display:none; align-items:center; gap:10px; background:var(--accent-l); border:1px solid var(--accent); border-radius:7px; padding:9px 14px; font-size:0.85rem; margin-top:12px; }
+    .file-tag.on { display:flex; }
+    .file-tag .fname { font-family:'DM Mono',monospace; font-weight:500; color:var(--accent); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .file-tag button { background:none; border:none; cursor:pointer; color:var(--ink-m); font-size:1rem; padding:2px 6px; border-radius:4px; }
+    .file-tag button:hover { background:#dde; }
+
+    .field-row { display:flex; flex-direction:column; gap:5px; margin-top:12px; }
+    label { font-size:0.78rem; font-weight:600; color:var(--ink-m); }
+    input[type=text] {
+      border:1px solid var(--border); border-radius:7px; padding:10px 13px;
+      font-family:var(--fn),sans-serif; font-size:0.9rem; color:var(--ink); background:var(--surface);
+      outline:none; transition:border-color 0.15s;
+    }
+    input[type=text]:focus { border-color:var(--accent); background:var(--white); }
+
+    .btn-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+    button.btn {
+      padding:10px 24px; border-radius:8px; border:none;
+      font-family:var(--fn),sans-serif; font-weight:600; font-size:0.86rem;
+      cursor:pointer; transition:opacity 0.15s, transform 0.1s; letter-spacing:0.01em;
+    }
+    button.btn:active { transform:scale(0.97); }
+    button.btn-primary { background:var(--accent); color:var(--btn-tx); }
+    button.btn-primary:hover { opacity:0.88; }
+    button.btn-secondary { background:var(--surface); color:var(--ink); border:1px solid var(--border); }
+    button.btn-secondary:hover { background:var(--border); }
+    button.btn:disabled { opacity:0.35; cursor:not-allowed; }
+
+    .status { display:none; font-size:0.83rem; padding:9px 13px; border-radius:7px; margin-top:10px; }
+    .status.error   { display:block; background:var(--status-err-bg); color:var(--error);   border:1px solid var(--status-err-bd); }
+    .status.info    { display:block; background:var(--accent-l); color:var(--accent); border:1px solid var(--status-info-bd); }
+    .status.success { display:block; background:var(--status-ok-bg); color:var(--success); border:1px solid var(--status-ok-bd); }
+
+    /* Stats bar */
+    .stats-bar { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+    .stat-box { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px 16px; flex:1; min-width:120px; }
+    .stat-box .val { font-size:1.5rem; font-weight:700; color:var(--ink); font-family:'DM Mono',monospace; }
+    .stat-box .lbl { font-size:0.72rem; color:var(--ink-m); margin-top:2px; text-transform:uppercase; letter-spacing:0.05em; }
+
+    /* Region chips */
+    .chips { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px; }
+    .chip {
+      display:inline-flex; align-items:center; gap:6px; padding:4px 12px 4px 8px;
+      border-radius:20px; font-size:0.75rem; font-weight:600; border:1px solid transparent;
+    }
+    .chip-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+
+    /* Priority pills (in table header) */
+    .pri-legend { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+    .pri-pill {
+      padding:2px 10px; border-radius:12px; font-size:0.72rem; font-weight:700;
+      border:1px solid transparent;
+    }
+
+    /* Preview table */
+    #preview-section { display:none; }
+    .table-wrap { overflow-x:auto; border-radius:8px; border:1px solid var(--border); }
+    table { border-collapse:collapse; width:100%; font-size:0.76rem; }
+    thead th {
+      background:var(--table-head-bg); color:var(--table-head-tx); padding:8px 10px;
+      text-align:left; font-family:'DM Mono',monospace; font-size:0.68rem;
+      letter-spacing:0.04em; font-weight:500; white-space:nowrap;
+    }
+    tbody tr { border-bottom:1px solid var(--border); }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { filter:brightness(0.96); }
+    td { padding:7px 10px; white-space:nowrap; max-width:260px; overflow:hidden; text-overflow:ellipsis; }
+    td.wrap { white-space:normal; max-width:220px; font-size:0.7rem; color:var(--ink-m); }
+
+    .badge {
+      display:inline-block; padding:2px 8px; border-radius:10px;
+      font-size:0.7rem; font-weight:700; white-space:nowrap;
+    }
+
+    .trunc-note {
+      text-align:center; font-size:0.72rem; color:var(--ink-m);
+      padding:9px; font-family:'DM Mono',monospace; background:var(--surface);
+    }
+
+    .spinner {
+      display:inline-block; width:13px; height:13px;
+      border:2px solid rgba(255,255,255,0.4); border-top-color:white;
+      border-radius:50%; animation:spin 0.7s linear infinite;
+      vertical-align:middle; margin-right:5px;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <div class="header-bar">
+    <div class="header-brand">
+      <h1>Field Service Tasks → PDF</h1>
+      <span class="header-sub">Region colour-coded · in-memory · no data stored · <a href="/privacy" style="color:inherit;opacity:0.85;text-decoration:none">privacy</a></span>
+    </div>
+    <button id="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode" style="flex-shrink:0;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.35);color:inherit;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:0.75rem;font-family:inherit;letter-spacing:0.04em;transition:background 0.2s">🌙 Dark</button>
+  </div>
+  <div class="ext-links">
+    <a class="ext-link" href="https://timegapanalyzer.113374.xyz/" target="_blank" rel="noopener">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
+      Time Gap Analyzer
+    </a>
+  </div>
+</header>
+
+<main>
+
+  <div class="upload-section">
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="csv-input" accept=".csv,.tsv,.txt" />
+      <span class="dropzone-icon">📋</span>
+      <div class="upload-text">
+        <strong>Click or drag a CSV file here</strong>
+        <small>Processed entirely in memory — never written to disk</small>
+      </div>
+    </div>
+    <div class="file-tag" id="file-tag">
+      <span class="fname" id="file-name"></span>
+      <button onclick="clearFile()" title="Remove">✕</button>
+    </div>
+    <div class="field-row">
+      <label for="report-title">Report title</label>
+      <input type="text" id="report-title" value="Field Service Open Tasks" />
+    </div>
+    <div class="status" id="status"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-preview" onclick="doPreview()" disabled>Preview &amp; confirm</button>
+    </div>
+  </div>
+
+  <div class="card" id="preview-section">
+    <h2>2 · Review &amp; Generate</h2>
+
+    <div class="stats-bar" id="stats-bar"></div>
+    <div class="chips" id="region-chips"></div>
+    <div class="pri-legend" id="pri-legend"></div>
+
+    <div class="table-wrap">
+      <table id="preview-table">
+        <thead id="preview-thead"></thead>
+        <tbody id="preview-tbody"></tbody>
+      </table>
+      <div class="trunc-note" id="trunc-note" style="display:none"></div>
+    </div>
+
+    <div class="btn-row" style="margin-top:20px">
+      <button class="btn btn-primary" id="btn-gen" onclick="doGenerate()">⬇ Download PDF</button>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+  const PALETTE = [
+    ["#1a5e8a","#d4ebf7"],["#7b3f8c","#f0ddf7"],["#2e7d55","#d2f0e3"],
+    ["#c45c1a","#fde8d5"],["#b5392a","#fad5d0"],["#1f4e8a","#d5e4f7"],
+    ["#6b6b1a","#f0f0cc"],["#8a1a6b","#f7d0ec"],["#1a6b6b","#d0f5f5"],
+    ["#8a5c1a","#f5e6cc"],
+  ];
+
+  const PRI_STYLE = {
+    "P1":           ["#fff","#cc0000"],
+    "P2":           ["#fff","#e05000"],
+    "P3":           ["#fff","#c47800"],
+    "P4":           ["#1a1a2e","#f5d060"],
+    "P5":           ["#1a1a2e","#b8d4f0"],
+    "High":         ["#fff","#cc0000"],
+    "Medium":       ["#1a1a2e","#f5d060"],
+    "Med":          ["#1a1a2e","#f5d060"],
+    "Low":          ["#1a1a2e","#b8d4f0"],
+    "UN-PRIORITISED":["#888","#eee"],
+    "":             ["#aaa","#f4f4f4"],
+  };
+
+  const STATUS_STYLE = {
+    "Not Started": ["#666688","#f4f4f4"],
+    "In Progress": ["#1a5e8a","#d4ebf7"],
+    "Completed":   ["#2e7d55","#d2f0e3"],
+    "On Hold":     ["#c45c1a","#fde8d5"],
+  };
+
+  const COL_LABELS = {
+    task_number:"Task #", case_number:"Case", case_type:"Type",
+    site_clean:"Site", region:"Region", priority:"Pri",
+    start_date:"Start", target_date:"Target", status:"Status", comment:"Comment"
+  };
+
+  let currentFile = null;
+
+  const dz = document.getElementById("dropzone");
+  dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("dragover"); });
+  dz.addEventListener("dragleave", () => dz.classList.remove("dragover"));
+  dz.addEventListener("drop", e => { e.preventDefault(); dz.classList.remove("dragover"); if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
+  document.getElementById("csv-input").addEventListener("change", e => { if(e.target.files[0]) setFile(e.target.files[0]); });
+
+  function setFile(f) {
+    currentFile = f;
+    document.getElementById("file-name").textContent = f.name;
+    document.getElementById("file-tag").classList.add("on");
+    document.getElementById("btn-preview").disabled = false;
+    setStatus("","");
+    document.getElementById("preview-section").style.display = "none";
+  }
+
+  function clearFile() {
+    currentFile = null;
+    document.getElementById("csv-input").value = "";
+    document.getElementById("file-tag").classList.remove("on");
+    document.getElementById("btn-preview").disabled = true;
+    document.getElementById("preview-section").style.display = "none";
+    setStatus("","");
+  }
+
+  function setStatus(msg, type) {
+    const el = document.getElementById("status");
+    el.textContent = msg;
+    el.className = "status" + (type ? " "+type : "");
+  }
+
+  async function doPreview() {
+    if (!currentFile) return;
+    setStatus("Parsing…","info");
+    document.getElementById("btn-preview").disabled = true;
+    const fd = new FormData();
+    fd.append("csv", currentFile);
+    try {
+      const res = await fetch("/preview",{method:"POST",body:fd});
+      const data = await res.json();
+      if (data.error) { setStatus("Error: "+data.error,"error"); return; }
+      renderPreview(data);
+      setStatus("","");
+    } catch(e) { setStatus("Network error: "+e.message,"error"); }
+    finally { document.getElementById("btn-preview").disabled = false; }
+  }
+
+  function priKey(val) {
+    if (!val) return "";
+    const v = val.trim().toUpperCase();
+    if (v==="UN-PRIORITISED") return "UN-PRIORITISED";
+    return val.trim();
+  }
+
+  function renderPreview(data) {
+    // Stats
+    const total = data.total;
+    const statuses = data.statuses || {};
+    const types = data.case_types || {};
+    const pris = data.priorities || {};
+    document.getElementById("stats-bar").innerHTML =
+      statBox(total, "Total Tasks") +
+      statBox(statuses["In Progress"]||0, "In Progress") +
+      statBox(statuses["Not Started"]||0, "Not Started") +
+      statBox(types["Reactive / Break Fix"]||0, "Reactive") +
+      statBox(types["PM / Check"]||0, "PM / Check");
+
+    // Region chips
+    const regionColorMap = {};
+    const chipsEl = document.getElementById("region-chips");
+    chipsEl.innerHTML = "";
+    data.regions.forEach((r,i) => {
+      const [dark,light] = PALETTE[i%PALETTE.length];
+      regionColorMap[r] = [dark,light];
+      const count = data.rows.filter(row=>row.region===r).length;
+      chipsEl.innerHTML += `<span class="chip" style="background:${light};border-color:${dark};color:${dark}">
+        <span class="chip-dot" style="background:${dark}"></span>${r}</span>`;
+    });
+
+    // Priority legend
+    const priGroups = {};
+    data.rows.forEach(r => { const p=priKey(r.priority||""); priGroups[p]=(priGroups[p]||0)+1; });
+    const priEl = document.getElementById("pri-legend");
+    priEl.innerHTML = "";
+    Object.entries(priGroups).sort().forEach(([p,c]) => {
+      const [fg,bg] = PRI_STYLE[p] || ["#444","#eee"];
+      priEl.innerHTML += `<span class="pri-pill" style="background:${bg};color:${fg};border-color:${bg}">${p||"—"} ×${c}</span>`;
+    });
+
+    // Table
+    const cols = data.columns;
+    document.getElementById("preview-thead").innerHTML =
+      "<tr>"+cols.map(c=>`<th>${COL_LABELS[c]||c}</th>`).join("")+"</tr>";
+
+    const tbody = document.getElementById("preview-tbody");
+    tbody.innerHTML = "";
+
+    data.rows.forEach(row => {
+      const region = row.region||"";
+      const [dark,light] = regionColorMap[region]||["",""];
+      const bgStyle = light ? `style="background:${light}"` : "";
+
+      const cells = cols.map(col => {
+        const val = row[col]||"";
+        if (col==="priority") {
+          const [fg,bg] = PRI_STYLE[priKey(val)] || ["#444","#eee"];
+          return `<td style="text-align:center"><span class="badge" style="background:${bg};color:${fg}">${val||"—"}</span></td>`;
+        }
+        if (col==="status") {
+          const [fg,bg] = STATUS_STYLE[val] || ["#666","#f4f4f4"];
+          return `<td style="text-align:center"><span class="badge" style="background:${bg};color:${fg}">${val}</span></td>`;
+        }
+        if (col==="comment") return `<td class="wrap">${val.slice(0,80)}${val.length>80?"…":""}</td>`;
+        if (col==="case_number") {
+          const parts = val.split(" ");
+          const num = parts[0]; const rest = parts.slice(1).join(" ").slice(0,50);
+          return `<td><b>${num}</b>${rest?`<br><span style="color:#888;font-size:0.68rem">${rest}${val.length>55?"…":""}</span>`:""}`;
+        }
+        return `<td title="${val}">${val}</td>`;
+      }).join("");
+
+      tbody.innerHTML += `<tr ${bgStyle}>${cells}</tr>`;
+    });
+
+    const note = document.getElementById("trunc-note");
+    if (data.total > data.rows.length) {
+      note.textContent = `Showing ${data.rows.length} of ${data.total} rows · all ${data.total} included in PDF`;
+      note.style.display = "block";
+    } else note.style.display = "none";
+
+    document.getElementById("preview-section").style.display = "block";
+    document.getElementById("preview-section").scrollIntoView({behavior:"smooth",block:"start"});
+  }
+
+  function statBox(val, lbl) {
+    return `<div class="stat-box"><div class="val">${val}</div><div class="lbl">${lbl}</div></div>`;
+  }
+
+  async function doGenerate() {
+    if (!currentFile) return;
+    const btn = document.getElementById("btn-gen");
+    btn.innerHTML = '<span class="spinner"></span>Generating…';
+    btn.disabled = true;
+    const title = document.getElementById("report-title").value.trim()||"Field Service Open Tasks";
+    const fd = new FormData();
+    fd.append("csv",currentFile);
+    fd.append("title",title);
+    try {
+      const res = await fetch("/generate",{method:"POST",body:fd});
+      if (!res.ok) { const e=await res.json(); setStatus("Error: "+e.error,"error"); return; }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href=url; a.download=title.replace(/\s+/g,"_")+".pdf"; a.click();
+      URL.revokeObjectURL(url);
+      setStatus("PDF downloaded.","success");
+    } catch(e) { setStatus("Network error: "+e.message,"error"); }
+    finally { btn.innerHTML="⬇ Download PDF"; btn.disabled=false; }
+  }
+
+  // ── Dark mode ─────────────────────────────────────────────────────────────
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    document.getElementById("theme-toggle").textContent = theme === "dark" ? "☀️ Light" : "🌙 Dark";
+  }
+  function toggleTheme() {
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const next = isDark ? "light" : "dark";
+    localStorage.setItem("theme", next);
+    applyTheme(next);
+  }
+  // Apply saved/preferred theme immediately
+  (function() {
+    const saved = localStorage.getItem("theme") ||
+      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    applyTheme(saved);
+  })();
+</script>
+</body>
+</html>
