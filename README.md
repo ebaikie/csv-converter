@@ -36,4 +36,4 @@ Copy `email_config.example.ini` to `email_config.ini` and fill in your SMTP deta
 
 ## Privacy
 
-The uploaded CSV is processed in-memory and never stored. See [/privacy](/privacy) for the full policy.
+The uploaded CSV is processed in-memory and never stored. A privacy policy is available at `/privacy` on the running app.
