@@ -5,3 +5,5 @@ __pycache__/
 email_config.ini
 .secret_key
 *.log
+*.bak
+.backup-*/
